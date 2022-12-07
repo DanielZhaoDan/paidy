@@ -24,6 +24,7 @@ class Application[F[_]: ConcurrentEffect: Timer] {
             .bindHttp(config.http.port, config.http.host)
             .withHttpApp(module.httpApp)
             .serve
+
     } yield ()
 
 }
