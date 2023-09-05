@@ -8,22 +8,24 @@ import forex.config.ApplicationConfig
 import forex.cache.rates.Algebra
 import forex.domain._
 
-class Cache[F[_]: Applicative] extends Algebra[F] {
+class Cache[F[_]: Applicative] (
+    config: ApplicationConfig
+) extends Algebra[F] {
 
-  override def get(pair: Rate.Pair): F[Error Either Rate] =
+  override def get(pair: Rate.Pair): F[Error Either Rate] = {
+    print(s"port: $config.memcached.port, host:$config.memcached.host")
     Rate(pair, Price(BigDecimal(123)), Timestamp.now).asRight[Error].pure[F]
-  override def set(key: String, rate: Rate, ttl:Long): F[Error Either Unit] =
-    print(s"set $key: $Rate").asRight[Error].pure[F]
+  }
+
+  override def set(key: String, rate: Rate, ttl:Long): Unit =
+    print(s"set $key: $Rate")
 
 }
 
-object Cache(
-config: ApplicationConfig
-) {
+object Cache{
 
-  def apply[F[_]: Applicative](config: ApplicationConfig): Algebra[F] = {
-    new Cache[F]()
-    print(config.memcached.port)
-  }
+  def apply[F[_]: Applicative](
+      config: ApplicationConfig
+  ): Algebra[F] = new Cache[F](config)
 
 }
