@@ -6,6 +6,7 @@ import forex.http.rates.RatesHttpRoutes
 import forex.services._
 import forex.programs._
 import forex.cache._
+import forex.scheduler._
 import org.http4s._
 import org.http4s.implicits._
 import org.http4s.server.middleware.{ AutoSlash, Timeout }
@@ -37,4 +38,6 @@ class Module[F[_]: Concurrent: Timer](config: ApplicationConfig) {
 
   val httpApp: HttpApp[F] = appMiddleware(routesMiddleware(http).orNotFound)
 
+  val scheduler: RatesScheduler = RatesSchedulers.refreshCache(config)
+  scheduler.execute()
 }

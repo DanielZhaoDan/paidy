@@ -13,7 +13,7 @@ class Cache[F[_]: Applicative] (
 ) extends Algebra[F] {
 
   override def get(pair: Rate.Pair): F[Error Either Rate] = {
-    print(s"port: $config.memcached.port, host:$config.memcached.host")
+    print(s"port: $config.memcached.port, host:$config.memcached.host \n")
     Rate(pair, Price(BigDecimal(123)), Timestamp.now).asRight[Error].pure[F]
   }
 
@@ -22,10 +22,13 @@ class Cache[F[_]: Applicative] (
 
 }
 
-object Cache{
+object Cache {
 
   def apply[F[_]: Applicative](
       config: ApplicationConfig
-  ): Algebra[F] = new Cache[F](config)
+  ): Algebra[F] = {
+    print("start cache\n")
+    new Cache[F](config)
+  }
 
 }
