@@ -4,7 +4,7 @@ import scala.concurrent.duration.FiniteDuration
 
 case class ApplicationConfig(
     http: HttpConfig,
-    external: HttpConfig,
+    external: ExternalConfig,
     memcached: CacheConfig,
     scheduler: SchedulerConfig,
 )
@@ -13,6 +13,13 @@ case class HttpConfig(
     host: String,
     port: Int,
     timeout: FiniteDuration,
+)
+
+case class ExternalConfig(
+    host: String,
+    port: Int,
+    timeout: Int,
+    token: String,
 )
 
 case class CacheConfig(

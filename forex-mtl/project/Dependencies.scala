@@ -18,6 +18,8 @@ object Dependencies {
 
     val akkaVersion         = "2.5.26"
     val akkaHttpVersion     = "10.1.11"
+    val scalaCacheVersion   = "0.28.0"
+    val scalaHttpVersion    = "0.8.0"
   }
 
   object Libraries {
@@ -52,6 +54,10 @@ object Dependencies {
     lazy val akka                = "com.typesafe.akka"     %% "akka-stream"                % Versions.akkaVersion
     lazy val akkaHttp            = "com.typesafe.akka"     %% "akka-http"                  % Versions.akkaHttpVersion
     lazy val akkaHttpJson        = "com.typesafe.akka"     %% "akka-http-spray-json"       % Versions.akkaHttpVersion
+
+    lazy val scalaCache          = "com.github.cb372"      %% "scalacache-memcached"       % Versions.scalaCacheVersion
+
+    lazy val scalaHttp           = "com.lihaoyi"           %% "requests"                % Versions.scalaHttpVersion
   }
 
 }

@@ -66,6 +66,8 @@ libraryDependencies ++= Seq(
   Libraries.akka,
   Libraries.akkaHttp,
   Libraries.akkaHttpJson,
+  Libraries.scalaCache,
+  Libraries.scalaHttp,
   Libraries.scalaTest        % Test,
   Libraries.scalaCheck       % Test,
   Libraries.catsScalaCheck   % Test
