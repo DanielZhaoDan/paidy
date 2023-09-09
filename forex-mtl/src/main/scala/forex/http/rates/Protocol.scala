@@ -20,8 +20,10 @@ object Protocol {
   final case class GetApiResponse(
       from: Currency,
       to: Currency,
+      bid: Price,
+      ask: Price,
       price: Price,
-      timestamp: Timestamp
+      timestamp: String
   )
 
   implicit val currencyEncoder: Encoder[Currency] =

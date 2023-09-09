@@ -19,7 +19,7 @@ object Dependencies {
     val akkaVersion         = "2.5.26"
     val akkaHttpVersion     = "10.1.11"
     val scalaCacheVersion   = "0.28.0"
-    val scalaHttpVersion    = "0.8.0"
+    var liftJson            = "3.5.0"
   }
 
   object Libraries {
@@ -57,7 +57,7 @@ object Dependencies {
 
     lazy val scalaCache          = "com.github.cb372"      %% "scalacache-memcached"       % Versions.scalaCacheVersion
 
-    lazy val scalaHttp           = "com.lihaoyi"           %% "requests"                % Versions.scalaHttpVersion
+    lazy val liftJson            = "net.liftweb"           %% "lift-json"                  % Versions.liftJson
   }
 
 }

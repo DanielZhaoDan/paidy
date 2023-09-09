@@ -9,7 +9,7 @@ object errors {
     final case class OneFrameLookupFailed(msg: String) extends Error
   }
 
-  def toProgramError(error: RatesCacheError): Error = error match {
+  def toServicesError(error: RatesCacheError): Error = error match {
     case RatesCacheError.CacheLookupFailed(msg) => Error.OneFrameLookupFailed(msg)
   }
 

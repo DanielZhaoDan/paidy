@@ -8,36 +8,39 @@ import errors._
 import forex.config.ApplicationConfig
 import forex.cache.rates.Algebra
 import forex.domain._
-import scala.concurrent.duration._
 import scalacache._
 import scalacache.memcached._
 import scalacache.modes.sync._
 import scalacache.serialization.binary._
 
 class LocalCache[F[_]: Applicative] (
-    cacheServer: Cache[Rate]
+    cacheServer: Cache[CachedRate]
 ) extends Algebra[F] {
 
   override def get(pair: Rate.Pair): F[Error Either Rate] = {
-    print("cache get")
-    Rate(pair, Price(BigDecimal(123)), Timestamp.now).asRight[Error].pure[F]
-  }
-
-  override def set(key: String, rate: Rate, ttl:Long): Unit = {
-    print(s"cache set: ${key}")
-    cacheServer.put(key)(rate, ttl=Some(1.seconds))
-    ()
+    val cacheResultOption = cacheServer.get("USDSGD")
+    if (cacheResultOption.isEmpty) {
+      Rate(pair, Price(BigDecimal(100)), Price(BigDecimal(100)), Price(BigDecimal(100)), "1970-01-01T00:00:00.00Z")
+        .asRight[Error].pure[F]
+    } else {
+      val cacheResult = cacheResultOption.get
+      Rate(pair,
+        Price(BigDecimal(cacheResult.ask)),
+        Price(BigDecimal(cacheResult.bid)),
+        Price(BigDecimal(cacheResult.price)),
+        cacheResult.timestamp,
+      ).asRight[Error].pure[F]
+    }
   }
 }
 
 object LocalCache {
 
-  implicit var cacheServer: Cache[Rate] = _
+  implicit var cacheServer: Cache[CachedRate] = _
 
   def apply[F[_]: Applicative](
       config: ApplicationConfig
   ): Algebra[F] = {
-    print("start cache\n")
     cacheServer = MemcachedCache(s"${config.memcached.host}:${config.memcached.port}")
     new LocalCache[F](cacheServer)
   }

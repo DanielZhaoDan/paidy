@@ -38,6 +38,5 @@ class Module[F[_]: Concurrent: Timer](config: ApplicationConfig) {
 
   val httpApp: HttpApp[F] = appMiddleware(routesMiddleware(http).orNotFound)
 
-  private val scheduler: RatesScheduler = RatesSchedulers.refreshCache(config)
-  scheduler.execute()
+  RatesSchedulers.refreshCache(config)
 }

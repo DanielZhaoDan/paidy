@@ -25,6 +25,7 @@ case class ExternalConfig(
 case class CacheConfig(
     host: String,
     port: Int,
+    ttl: FiniteDuration,
 )
 
 case class SchedulerConfig(

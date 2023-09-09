@@ -12,7 +12,7 @@ class OneFrameLive[F[_]: Applicative](
 ) extends Algebra[F] {
 
   override def get(pair: Rate.Pair): F[Error Either Rate] =
-    EitherT(ratesCache.get(pair)).leftMap(toProgramError(_)).value
+    EitherT(ratesCache.get(pair)).leftMap(toServicesError(_)).value
 
 }
 
