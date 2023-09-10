@@ -13,8 +13,10 @@ import org.http4s.server.middleware.{ AutoSlash, Timeout }
 
 class Module[F[_]: Concurrent: Timer](config: ApplicationConfig) {
 
+  // initialize cache module with memcached implementation
   private val ratesCache: RatesCache[F] = RatesCaches[F](config)
 
+  // initialise RatesServices.liveRate to replace RatesServices.dummy to serve user requests
   private val ratesService: RatesService[F] = RatesServices.liveRate[F](ratesCache)
 
   private val ratesProgram: RatesProgram[F] = RatesProgram[F](ratesService)
@@ -38,5 +40,6 @@ class Module[F[_]: Concurrent: Timer](config: ApplicationConfig) {
 
   val httpApp: HttpApp[F] = appMiddleware(routesMiddleware(http).orNotFound)
 
+  // initialize scheduler module and start refreshCache task
   RatesSchedulers.refreshCache(config)
 }

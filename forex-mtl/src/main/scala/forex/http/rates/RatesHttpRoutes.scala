@@ -19,6 +19,7 @@ class RatesHttpRoutes[F[_]: Sync](rates: RatesProgram[F], config: ApplicationCon
 
   private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root :? FromQueryParam(from) +& ToQueryParam(to) +& TokenQueryParam(token) =>
+      // TODO: use AuthMiddleware for authentication
       if (token != config.http.allowedToken) {
         Forbidden("Your request is forbidden because of Missing or wrong token used")
       } else {
@@ -28,6 +29,7 @@ class RatesHttpRoutes[F[_]: Sync](rates: RatesProgram[F], config: ApplicationCon
           rates.get(RatesProgramProtocol.GetRatesRequest(from, to)).flatMap(Sync[F].fromEither).flatMap { rate =>
             val resp = rate.asGetApiResponse
             if (resp.bid == Price(BigDecimal(-1))) {
+              // if no rate pair get, return service is temporarily unavailable
               ServiceUnavailable("Service unavailable, please try again later")
             } else {
               Ok(resp)

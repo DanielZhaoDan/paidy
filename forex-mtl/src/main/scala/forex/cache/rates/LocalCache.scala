@@ -34,6 +34,7 @@ class LocalCache[F[_]: Applicative] (
 
     val cacheResultOption = cacheServer.get(s"$fromCurrency$toCurrency")
     if (cacheResultOption.isEmpty) {
+      // TODO instead of return dummy rate, should return ERROR for upstream to handle
       Rate(pair, Price(BigDecimal(-1)), Price(BigDecimal(-1)), Price(BigDecimal(-1)), "").asRight[Error].pure[F]
     } else {
       val cacheResult = cacheResultOption.get
@@ -58,8 +59,14 @@ object LocalCache {
 
   val params = Currency.assembleRateFetchParam()
 
+  /**
+   * invoke downstream Rate provider services and refresh local cache.
+   *
+   * @param config global configurations
+   * @param retryTime the No. of retry of refresh
+   */
   implicit def fetchLatestRatePair(config: ApplicationConfig, retryTime: Int): Unit = {
-    print(s"refreshing for No. ${retryTime}...\n")
+//    print(s"refreshing for No. ${retryTime}...\n")
 
     val url = s"http://${config.external.host}:${config.external.port}/rates?${params}"
 
@@ -85,6 +92,12 @@ object LocalCache {
   }
 
 
+  /**
+   * extract rate for each currency pairs and store into local cache with ttl = cacheTTL
+   *
+   * @param resp
+   * @param cacheTTL
+   */
   def doRefreshCache(resp: HttpResponse, cacheTTL: FiniteDuration): Unit = {
     implicit val formats = net.liftweb.json.DefaultFormats
 

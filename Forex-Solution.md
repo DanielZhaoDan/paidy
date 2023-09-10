@@ -16,7 +16,7 @@ same currency pair in proxy and return directly without invoking One-Frame servi
 In the following document, I will explain the cache solution as final design of this proxy 
 # Solution Architecture
 ## Solution with Cache
-![CacheSolution.png](docs%2FCacheSolution.png)
+![CacheSolution.png](forex-mtl/docs/CacheSolution.png)
 * When proxy starts, there will be a scheduler start to execute every 2.5 minutes (configurable) to query rate for all currencies 
 (as One-Frame service can accept multiple currency pair in one request, by this we way can reduce the count of request sent) supported by proxy from One-Frame Service
 * * If got valid response, refresh latest rate pair into cache
@@ -42,29 +42,135 @@ and it is very easy to add-on other external rate providers and switch-off the d
 
 
 # How to run locally
+Please refer to forex-mtl/docs/demo.mov for demo
 
-#### How to run locally
+## Prerequisite
+* install `Memcached` and start in 11211 port (can refer to this [doc](https://gist.github.com/tomysmile/ba6c0ba4488ea51e6423d492985a7953))
+* download docker and start docker desktop from official website
+* Pull the docker image with `docker pull paidyinc/one-frame` and Run the service locally on port 8080 with `docker run -p 8080:8080 paidyinc/one-frame`
+* install `JDK 11`, `scala 2.13.5` and `sbt` if needed
 
-* Pull the docker image with `docker pull paidyinc/one-frame`
-* Run the service locally on port 8080 with `docker run -p 8080:8080 paidyinc/one-frame`
+## Start service locally
+1) open terminal and change to project folder `cd ......./projects/paidy/forex-mtl/`
+2) build project with command `sbt`. If build successfully, you should be able to see
+    ```
+   [info] welcome to sbt 1.9.4 (Homebrew Java 20.0.1)
+    [info] loading settings for project forex-mtl-build from plugins.sbt ...
+    [info] loading project definition from /Documents/projects/paidy/forex-mtl/project
+    [info] loading settings for project forex-mtl from build.sbt ...
+    [info] set current project to forex (in build file:/Documents/projects/paidy/forex-mtl/)
+    [info] sbt server started at local:///.sbt/1.0/server/af42d737d9f59f63ba20/sock
+    [info] started sbt server
+    sbt:forex>
+   ```
+3) compile the project with command `compile`. If compile successfully, you should be able to see 
+   ```
+   [success] Total time: 1 s, completed 10 Sept 2023, 4:42:23 pm
+   ```
+4) start the server with command `run`, you should be able to see
+   ```
+   2023-09-10 16:45:06.105 INFO net.spy.memcached.MemcachedConnection:  Setting retryQueueSize to -1
+   2023-09-10 16:45:06.110 INFO net.spy.memcached.MemcachedConnection:  Added {QA sa=/0.0.0.0:11211, #Rops=0, #Wops=0, #iq=0, topRop=null, topWop=null, toWrite=0, interested=0} to connect queue
+   refreshing for No. 0...
+   16:45:06.404 [ioapp-compute-0] INFO  o.h.b.c.nio1.NIO1SocketServerGroup - Service bound to address /[0:0:0:0:0:0:0:0]:18080
+   16:45:06.406 [ioapp-compute-0] INFO  o.h.server.blaze.BlazeServerBuilder -
+     _   _   _        _ _
+   | |_| |_| |_ _ __| | | ___
+   | ' \  _|  _| '_ \_  _(_-<
+   |_||_\__|\__| .__/ |_|/__/
+   |_|
+   16:45:06.430 [ioapp-compute-0] INFO  o.h.server.blaze.BlazeServerBuilder - http4s v0.21.22 on blaze v0.14.15 started at http://[::]:18080/
+   ```
+   The server is started in 18080 port.
 
-#### Usage
-__API__
+Now it is time to try the proxy!
 
-The One-Frame API offers two different APIs, for this exercise please use the `GET /rates` one.
+## Access proxy
+### Case 1: Happy case requests
+   `curl  -i 'localhost:18080/rates?from=USD&to=aud&token=10dc303535874aeccc86a8251e6992f5'`
+   
+response:
+   ```
+   HTTP/1.1 200 OK
+   Content-Type: application/json
+   Date: Sun, 10 Sep 2023 08:47:19 GMT
+   Content-Length: 143
+   
+   {"from":"USD","to":"AUD","bid":0.05887504426624901,"ask":0.2735646425035929,"price":0.16621984338492096,"timestamp":"2023-09-10T08:45:06.746Z"}
+   ```
+### Case 2: 403 case with wrong or no token
+`curl  -i 'localhost:18080/rates?from=USD&to=aud&token=abc'`
 
-`GET /rates?pair={currency_pair_0}&pair={currency_pair_1}&...pair={currency_pair_n}`
+Response:
+```HTTP/1.1 403 Forbidden
+Content-Type: text/plain; charset=UTF-8
+Date: Sun, 10 Sep 2023 08:49:06 GMT
+Content-Length: 64
 
-pair: Required query parameter that is the concatenation of two different currency codes, e.g. `USDJPY`. One or more pairs per request are allowed.
-
-token: Header required for authentication. `10dc303535874aeccc86a8251e6992f5` is the only accepted value in the current implementation.
-
-__Example cURL request__
+Your request is forbidden because of Missing or wrong token used
 ```
-$ curl -H "token: 10dc303535874aeccc86a8251e6992f5" 'localhost:8080/rates?pair=USDJPY'
+### case 3: 400 case with wrong currency parameter
+`curl  -i 'localhost:18080/rates?from=USD&token=10dc303535874aeccc86a8251e6992f5&to=JP'`
 
-[{"from":"USD","to":"JPY","bid":0.61,"ask":0.82,"price":0.71,"time_stamp":"2019-01-01T00:00:00.000"}]
+Response:
 ```
+HTTP/1.1 400 Bad Request
+Content-Type: text/plain; charset=UTF-8
+Date: Sun, 10 Sep 2023 08:52:09 GMT
+Content-Length: 25
+
+invalid currency argument
+```
+### case 4: 404 case if no enough parameters provided
+`curl  -i 'localhost:18080/rates?from=USD&token=10dc303535874aeccc86a8251e6992f5'`
+
+`curl  -i 'localhost:18080/rates?from=USD&to=JPY'`
+
+Response:
+```
+HTTP/1.1 404 Not Found
+Content-Type: text/plain; charset=UTF-8
+Date: Sun, 10 Sep 2023 08:50:40 GMT
+Content-Length: 9
+
+Not found
+```
+
+# Code Walking through
+## Commit History
+There are totally 6 commits about code changes and 2 commits about document, please refer to this PR [link](https://github.com/paidy/interview/compare/master...DanielZhaoDan:paidy:master) for more details:
+![img.png](forex-mtl/docs/Commit.png)
+## Code structure
+```
+  - forex-mtl
+      - docs ----> contains the documents used in .md file
+      - project
+        - build.properties ----> defined sbt version
+        - Dependencies ----> added some required libraries like akka-http
+      - src
+        - main
+          - resources
+            - application.conf ----> added configuration for external, cache, scheduler
+          - scala
+            - forex
+              - cache ----> cache related implementation 
+              - http
+                - rates
+                  - RatesHttpRoutes.scala ----> added parameter and token validation logic
+              - scheduler -> package contains all scheduler tasks 
+              - services
+                - rates
+                  - interpreters
+                    - OneFrameLive.scala ----> the implementation to serve user requests
+```
+### Something To be Optimised...
+Because I did not have professional experiences using Scala, although I have spent some time to learn the concept, syntax, use cases of scala, 
+I have to say the current implementation is still not perfect. From my point of view, below code level optimisation should be applied:
+1) Use `AuthMiddleware` for Authorisation and return HTTP 401 in middleware level not HTTP 403 in HttpRoutes
+   * I have spent some time to explore and try it according to this [doc](https://blog.rockthejvm.com/scala-http4s-authentication/), but failed to merge it to existing `routesMiddleware` and `appMiddleware`.
+2) involve log libraries to print logs of critical methods instead of using `print` to print in console
+3) make use of Either [A, B] syntax to handle ERROR or exception case gracefully instead of using dummy return value to upstream (like the get function in Localcache.scala)
+
 
 # Appendix
 ## Potential Solution to Cons of Cache Solution

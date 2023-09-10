@@ -20,4 +20,4 @@ TAGS
 *.sublime-workspace
 tests.iml
 # Auto-copied by sbt-microsites
-docs/src/main/tut/contributing.md
+forex-mtl/docs/src/main/tut/contributing.md
