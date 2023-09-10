@@ -13,6 +13,7 @@ case class HttpConfig(
     host: String,
     port: Int,
     timeout: FiniteDuration,
+    allowedToken: String,
 )
 
 case class ExternalConfig(

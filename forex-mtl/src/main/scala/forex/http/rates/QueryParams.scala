@@ -11,5 +11,6 @@ object QueryParams {
 
   object FromQueryParam extends QueryParamDecoderMatcher[Currency]("from")
   object ToQueryParam extends QueryParamDecoderMatcher[Currency]("to")
+  object TokenQueryParam extends QueryParamDecoderMatcher[String]("token")
 
 }
